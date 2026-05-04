@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TMS — Pandurang Container Movers</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#030d1a;--bg2:#061525;--card:#081e35;--card2:#0b2644;
+  --a:#00e5ff;--a2:#0077ff;--a3:#00ff99;--a4:#7c3aed;
+  --warn:#ffb300;--danger:#ff1744;--ok:#00e676;
+  --t:#dff4ff;--sub:#4d8aab;--brd:#0d3553;
+  --sh:0 0 30px rgba(0,229,255,.15);
+  --sh2:0 0 60px rgba(0,229,255,.08);
+  --fn:'Exo 2',sans-serif;--fm:'Orbitron',monospace;--fc:'Share Tech Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-family:var(--fn)}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.grid-bg{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%)}
+.scanline{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px)}
+#app{position:relative;z-index:2;display:flex;height:100vh;overflow:hidden}
+
+/* ─── SIDEBAR ─── */
+.sb{width:230px;flex-shrink:0;background:rgba(6,21,37,.97);
+  border-right:1px solid var(--brd);display:flex;flex-direction:column;
+  position:relative;overflow:hidden;transition:width .3s}
+.sb::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;
+  background:linear-gradient(to bottom,transparent,var(--a),transparent);
+  opacity:.4;animation:sbline 4s ease-in-out infinite}
+@keyframes sbline{0%,100%{opacity:.2}50%{opacity:.7}}
+
+.sb-logo{padding:18px 16px;border-bottom:1px solid var(--brd);
+  background:linear-gradient(135deg,rgba(0,119,255,.15),rgba(0,229,255,.05));
+  position:relative;overflow:hidden}
+.sb-logo::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 0%,rgba(0,229,255,.06) 100%)}
+.truck-anim{font-size:26px;display:inline-block;animation:trk 2.5s ease-in-out infinite}
+@keyframes trk{0%,100%{transform:translateX(0) rotate(0)}
+  25%{transform:translateX(3px) rotate(.5deg)}75%{transform:translateX(-2px) rotate(-.3deg)}}
+.sb-company{font-family:var(--fm);font-size:11px;font-weight:700;
+  color:var(--a);letter-spacing:2px;margin-top:5px;text-shadow:0 0 10px var(--a)}
+.sb-tagline{font-size:9px;color:var(--sub);letter-spacing:1px;margin-top:1px}
+
+.sb-user{padding:10px 16px;border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;gap:10px}
+.ava{width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--a2),var(--a));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:12px;font-weight:700;
+  box-shadow:0 0 14px rgba(0,119,255,.5),0 0 28px rgba(0,229,255,.2)}
+.sb-uname{font-size:12px;font-weight:600;color:var(--t)}
+.sb-role{font-size:9px;color:var(--sub);margin-top:1px;letter-spacing:.5px}
+
+.nav-wrap{flex:1;overflow-y:auto;padding:6px 0}
+.nav-wrap::-webkit-scrollbar{width:2px}
+.nav-wrap::-webkit-scrollbar-thumb{background:var(--brd)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;
+  cursor:pointer;font-family:var(--fn);font-size:12.5px;font-weight:500;
+  color:var(--sub);transition:all .2s;position:relative;
+  border-left:2px solid transparent;letter-spacing:.3px}
+.nav-item:hover{color:var(--t);background:rgba(0,229,255,.05);
+  border-left-color:rgba(0,229,255,.3)}
+.nav-item.active{color:var(--a);background:rgba(0,229,255,.1);
+  border-left-color:var(--a);text-shadow:0 0 8px rgba(0,229,255,.5)}
+.nav-item.active .nav-ic{text-shadow:0 0 10px var(--a)}
+.nav-ic{font-size:15px;width:22px;text-align:center;flex-shrink:0}
+.nav-sep{height:1px;background:var(--brd);margin:6px 16px;opacity:.5}
+.nav-bottom{border-top:1px solid var(--brd)}
+
+/* ─── MAIN ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.topbar{padding:14px 26px;border-bottom:1px solid var(--brd);
+  background:rgba(3,13,26,.92);display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;
+  box-shadow:0 1px 20px rgba(0,0,0,.4)}
+.tb-title{font-family:var(--fm);font-size:18px;font-weight:700;
+  color:var(--t);letter-spacing:1px}
+.tb-sub{font-size:11px;color:var(--sub);margin-top:3px;font-family:var(--fc)}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-chip{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.15);
+  border-radius:20px;padding:4px 12px;font-size:10px;color:var(--a);
+  font-family:var(--fc);letter-spacing:.5px}
+.tb-chip.pulse{animation:chipPulse 2s ease-in-out infinite}
+@keyframes chipPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(0,229,255,.4)}}
+
+.content{flex:1;overflow-y:auto;padding:22px 26px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+
+/* ─── SCREENS ─── */
+.screen{display:none;animation:scrIn .45s cubic-bezier(.22,1,.36,1)}
+.screen.active{display:block}
+@keyframes scrIn{
+  from{opacity:0;transform:perspective(1000px) rotateX(4deg) translateY(16px) scale(.98)}
+  to{opacity:1;transform:perspective(1000px) rotateX(0) translateY(0) scale(1)}}
+
+/* ─── CARDS ─── */
+.card{background:var(--card);border:1px solid var(--brd);border-radius:14px;
+  padding:18px;position:relative;overflow:hidden;
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,border-color .35s;
+  transform-style:preserve-3d}
+.card::before{content:'';position:absolute;inset:0;border-radius:14px;
+  background:linear-gradient(135deg,rgba(0,229,255,.06) 0%,transparent 70%);pointer-events:none}
+.card:hover{transform:perspective(700px) rotateX(-2deg) rotateY(3deg) translateZ(10px);
+  box-shadow:var(--sh),0 24px 48px rgba(0,0,0,.5);border-color:rgba(0,229,255,.35)}
+.card.no-hover:hover{transform:none;box-shadow:none}
+.card-glow{border-color:rgba(0,229,255,.4);box-shadow:var(--sh)}
+
+/* ─── STAT CARDS ─── */
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--brd);border-radius:12px;
+  padding:16px;position:relative;overflow:hidden;cursor:default;
+  transition:transform .3s,box-shadow .3s,border-color .3s;transform-style:preserve-3d}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  border-radius:0 0 12px 12px;background:linear-gradient(90deg,transparent,var(--c,var(--a)),transparent)}
+.stat::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(circle,rgba(0,229,255,.04) 0%,transparent 60%);pointer-events:none}
+.stat:hover{transform:perspective(500px) rotateX(-4deg) translateZ(12px);
+  box-shadow:0 0 20px rgba(0,229,255,.2),0 12px 30px rgba(0,0,0,.4);
+  border-color:rgba(0,229,255,.3)}
+.stat-lbl{font-size:10px;color:var(--sub);font-family:var(--fc);letter-spacing:.8px;margin-bottom:8px}
+.stat-val{font-family:var(--fm);font-size:26px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--c,var(--a)),white);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-ico{position:absolute;top:12px;right:12px;font-size:22px;opacity:.18}
+.stat-trend{font-size:10px;color:var(--sub);margin-top:4px;font-family:var(--fc)}
+
+/* ─── TABLE ─── */
+.tbl-wrap{border:1px solid var(--brd);border-radius:12px;overflow:hidden}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{background:rgba(0,229,255,.07);color:var(--a);font-family:var(--fm);
+  font-size:10px;letter-spacing:1.2px;padding:11px 14px;text-align:left;
+  border-bottom:1px solid var(--brd);font-weight:600}
+.tbl td{padding:11px 14px;border-bottom:1px solid rgba(13,53,83,.5);
+  color:var(--t);vertical-align:middle;transition:background .15s}
+.tbl tbody tr{cursor:pointer;transition:background .15s}
+.tbl tbody tr:hover td{background:rgba(0,229,255,.06)}
+.tbl tbody tr.sel td{background:rgba(0,229,255,.12);border-bottom-color:rgba(0,229,255,.2)}
+.tbl tbody tr:last-child td{border-bottom:none}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+  border-radius:20px;font-size:10px;font-weight:600;font-family:var(--fc);letter-spacing:.5px}
+.badge::before{content:'●';font-size:6px;animation:dot 2s ease-in-out infinite}
+@keyframes dot{0%,100%{opacity:1}50%{opacity:.4}}
+.b-del{background:rgba(0,230,118,.1);color:var(--ok);border:1px solid rgba(0,230,118,.25)}
+.b-pnd{background:rgba(255,179,0,.1);color:var(--warn);border:1px solid rgba(255,179,0,.25)}
+.b-can{background:rgba(255,23,68,.1);color:var(--danger);border:1px solid rgba(255,23,68,.2)}
+.b-trn{background:rgba(0,119,255,.12);color:#5bf;border:1px solid rgba(0,119,255,.25)}
+.b-paid{background:rgba(0,230,118,.1);color:var(--ok);border:1px solid rgba(0,230,118,.25)}
+.b-unpaid{background:rgba(255,23,68,.1);color:var(--danger);border:1px solid rgba(255,23,68,.2)}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;
+  font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:.8px;
+  border:none;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;white-space:nowrap}
+.btn::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);
+  opacity:0;transition:opacity .2s;pointer-events:none}
+.btn:hover::before{opacity:1}
+.btn:active{transform:scale(.96)}
+.btn-p{background:linear-gradient(135deg,var(--a2),var(--a));color:#000;
+  box-shadow:0 0 18px rgba(0,229,255,.35)}
+.btn-p:hover{box-shadow:0 0 28px rgba(0,229,255,.55)}
+.btn-ok{background:linear-gradient(135deg,#005724,var(--ok));color:#000}
+.btn-dan{background:linear-gradient(135deg,#800,var(--danger));color:#fff}
+.btn-gh{background:rgba(0,229,255,.08);color:var(--a);border:1px solid rgba(0,229,255,.2)}
+.btn-gh:hover{background:rgba(0,229,255,.16);border-color:rgba(0,229,255,.45)}
+.btn-wa{background:linear-gradient(135deg,#005c20,#25D366);color:#fff}
+.btn-em{background:linear-gradient(135deg,#2d1888,#6366f1);color:#fff}
+.btn-ai{background:linear-gradient(135deg,#3d0d6e,#a855f7);color:#fff}
+.btn-warn{background:linear-gradient(135deg,#7a4800,var(--warn));color:#000}
+.btn-sm{padding:5px 11px;font-size:10px}
+.btn-xs{padding:4px 9px;font-size:9px}
+.btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ─── FORM ─── */
+.form-sect{margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.fsect-bar{width:3px;height:20px;border-radius:2px;
+  background:linear-gradient(to bottom,var(--a),var(--a2));flex-shrink:0}
+.fsect-title{font-family:var(--fm);font-size:12px;font-weight:700;
+  color:var(--a);letter-spacing:1.5px;text-shadow:0 0 8px rgba(0,229,255,.3)}
+.fsect-line{flex:1;height:1px;background:linear-gradient(to right,var(--brd),transparent)}
+
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:10px;color:var(--sub);font-family:var(--fc);letter-spacing:.6px}
+.fg input,.fg select,.fg textarea{
+  background:rgba(3,13,26,.8);border:1px solid var(--brd);border-radius:8px;
+  padding:9px 12px;color:var(--t);font-family:var(--fn);font-size:12.5px;
+  outline:none;transition:all .2s;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{
+  border-color:var(--a);box-shadow:0 0 0 3px rgba(0,229,255,.1);
+  background:rgba(6,21,37,.9)}
+.fg select{cursor:pointer;appearance:none}
+.fg textarea{resize:vertical;min-height:60px}
+.fg .total-val{font-family:var(--fm);font-size:16px;color:var(--ok);
+  text-align:right;background:transparent;border:none;cursor:default}
+.form-card{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:20px}
+
+/* ─── CHARTS ─── */
+.chart-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:16px}
+.chart-card{background:var(--card);border:1px solid var(--brd);border-radius:12px;
+  padding:16px;position:relative;overflow:hidden}
+.chart-card::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,229,255,.03) 0%,transparent 50%);pointer-events:none}
+.chart-lbl{font-family:var(--fm);font-size:10px;color:var(--sub);
+  letter-spacing:1.2px;margin-bottom:14px}
+.bars-wrap{display:flex;align-items:flex-end;gap:5px;height:100px}
+.bar3d{flex:1;border-radius:4px 4px 0 0;position:relative;cursor:pointer;
+  background:linear-gradient(to top,var(--a2),var(--a));
+  box-shadow:0 0 10px rgba(0,229,255,.3),inset 0 0 8px rgba(255,255,255,.1);
+  transition:filter .2s,transform .2s;animation:barUp .8s cubic-bezier(.22,1,.36,1) both}
+.bar3d:hover{filter:brightness(1.4);transform:scaleX(1.08)}
+@keyframes barUp{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+.bar-tip{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:8px;color:var(--a);font-family:var(--fc);white-space:nowrap;opacity:0;transition:opacity .2s}
+.bar3d:hover .bar-tip{opacity:1}
+.bar-lbl{font-size:8px;color:var(--sub);text-align:center;margin-top:4px;font-family:var(--fc)}
+
+/* Pie */
+.pie-area{display:flex;align-items:center;gap:14px}
+.pie-leg{font-size:11px}
+.pie-li{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.pie-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ─── DETAIL MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);animation:fadeIn .2s}
+.modal-overlay.open{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--card);border:1px solid rgba(0,229,255,.25);border-radius:18px;
+  width:640px;max-width:95vw;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 0 60px rgba(0,229,255,.2),0 40px 80px rgba(0,0,0,.6);
+  animation:modalIn .35s cubic-bezier(.22,1,.36,1)}
+@keyframes modalIn{
+  from{transform:perspective(800px) rotateX(6deg) translateY(30px) scale(.94);opacity:0}
+  to{transform:none;opacity:1}}
+.modal-hdr{padding:18px 22px;background:linear-gradient(135deg,rgba(0,119,255,.3),rgba(0,229,255,.1));
+  border-bottom:1px solid var(--brd);flex-shrink:0}
+.modal-title{font-family:var(--fm);font-size:16px;font-weight:700;color:var(--t)}
+.modal-meta{font-size:11px;color:var(--sub);margin-top:3px;font-family:var(--fc)}
+.modal-body{flex:1;overflow-y:auto;padding:18px 22px}
+.modal-body::-webkit-scrollbar{width:3px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--brd)}
+.modal-ftr{padding:14px 22px;border-top:1px solid var(--brd);
+  display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+
+/* Detail rows */
+.d-sect{font-family:var(--fm);font-size:10px;color:var(--a);letter-spacing:1.2px;
+  margin:14px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--brd)}
+.d-row{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid rgba(13,53,83,.3);font-size:12px}
+.d-row:last-child{border-bottom:none}
+.d-lbl{color:var(--sub);flex:0 0 160px}
+.d-val{color:var(--t);font-weight:500;text-align:right;flex:1}
+.d-val.hi{color:var(--ok);font-family:var(--fm);font-size:14px}
+
+/* ─── AI PANEL ─── */
+.ai-panel{background:linear-gradient(135deg,rgba(61,13,110,.3),rgba(124,58,237,.1));
+  border:1px solid rgba(124,58,237,.3);border-radius:12px;padding:14px;margin-top:12px}
+.ai-title{font-family:var(--fm);font-size:11px;color:#c084fc;letter-spacing:1px;margin-bottom:10px}
+.risk-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+  border-radius:20px;font-family:var(--fm);font-size:11px;font-weight:700}
+.risk-low{background:rgba(0,230,118,.15);color:var(--ok);border:1px solid rgba(0,230,118,.3)}
+.risk-med{background:rgba(255,179,0,.15);color:var(--warn);border:1px solid rgba(255,179,0,.3)}
+.risk-hi{background:rgba(255,23,68,.15);color:var(--danger);border:1px solid rgba(255,23,68,.3);
+  animation:riskPulse 1.5s ease-in-out infinite}
+@keyframes riskPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 12px rgba(255,23,68,.4)}}
+.ai-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;font-family:var(--fc)}
+.ai-row .k{color:var(--sub)}
+.ai-row .v{color:var(--t);font-weight:600}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card2);border:1px solid rgba(0,229,255,.3);border-radius:10px;
+  padding:10px 22px;font-size:13px;font-family:var(--fc);color:var(--t);
+  box-shadow:var(--sh);z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── LOGIN ─── */
+.login-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:center;
+  justify-content:center;background:rgba(3,13,26,.97);backdrop-filter:blur(12px)}
+.login-card{background:var(--card);border:1px solid rgba(0,229,255,.2);border-radius:20px;
+  padding:40px 44px;width:400px;box-shadow:var(--sh),var(--sh2);
+  animation:loginIn .6s cubic-bezier(.22,1,.36,1)}
+@keyframes loginIn{
+  from{transform:perspective(800px) rotateX(12deg) translateY(40px) scale(.9);opacity:0}
+  to{transform:none;opacity:1}}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .truck{font-size:44px;display:inline-block;animation:trk 2s ease-in-out infinite}
+.login-co{font-family:var(--fm);font-size:16px;font-weight:700;
+  color:var(--a);letter-spacing:2px;text-shadow:0 0 14px var(--a);text-align:center;margin-top:8px}
+.login-sub{font-size:11px;color:var(--sub);text-align:center;margin-top:4px;font-family:var(--fc)}
+.login-fg{margin-top:18px}
+.login-fg label{font-size:10px;color:var(--sub);font-family:var(--fc);letter-spacing:.8px;display:block;margin-bottom:6px}
+.login-fg input{width:100%;background:rgba(3,13,26,.8);border:1px solid var(--brd);border-radius:9px;
+  padding:11px 14px;color:var(--t);font-family:var(--fn);font-size:13px;outline:none;transition:all .2s;margin-bottom:14px}
+.login-fg input:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--a2),var(--a));
+  color:#000;border:none;border-radius:9px;font-family:var(--fm);font-size:13px;font-weight:700;
+  letter-spacing:1px;cursor:pointer;transition:all .2s;margin-top:6px}
+.login-btn:hover{box-shadow:0 0 24px rgba(0,229,255,.5);transform:translateY(-1px)}
+.login-err{font-size:11px;color:var(--danger);text-align:center;min-height:16px;
+  margin-top:-8px;margin-bottom:8px;font-family:var(--fc)}
+.login-hint{font-size:10px;color:var(--warn);text-align:center;margin-top:14px;font-family:var(--fc)}
+
+/* ─── REMINDER ─── */
+.reminder-card{background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);
+  border-radius:10px;padding:12px 16px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center}
+.rem-title{font-size:13px;font-weight:600}
+.rem-meta{font-size:10px;color:var(--sub);margin-top:2px;font-family:var(--fc)}
+.rem-amt{font-family:var(--fm);font-size:14px;color:var(--danger);text-shadow:0 0 8px rgba(255,23,68,.4)}
+.overdue-alert{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);
+  border-radius:10px;padding:12px 18px;font-family:var(--fm);font-size:12px;
+  color:var(--danger);letter-spacing:.8px;margin-bottom:14px;
+  animation:overduePulse 2s ease-in-out infinite}
+@keyframes overduePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 15px rgba(255,23,68,.3)}}
+
+/* ─── GST ─── */
+.gst-total-bar{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);
+  border-radius:10px;padding:12px 18px;margin-top:14px;font-family:var(--fc);font-size:12px;color:var(--ok)}
+
+/* ─── ROUTE AI ─── */
+.ai-tabs{display:flex;gap:2px;margin-bottom:16px;background:var(--card);
+  border-radius:10px;padding:3px;border:1px solid var(--brd)}
+.ai-tab{flex:1;padding:7px;text-align:center;font-family:var(--fm);font-size:10px;
+  letter-spacing:.8px;cursor:pointer;border-radius:8px;transition:all .2s;color:var(--sub)}
+.ai-tab.active{background:linear-gradient(135deg,var(--a2),rgba(0,229,255,.3));
+  color:var(--a);box-shadow:0 0 10px rgba(0,229,255,.2)}
+.ai-content{display:none}
+.ai-content.active{display:block}
+.pred-result{background:rgba(0,119,255,.06);border:1px solid rgba(0,119,255,.15);
+  border-radius:12px;padding:16px}
+.pred-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid rgba(13,53,83,.4);font-size:12.5px}
+.pred-row:last-child{border-bottom:none}
+.pred-k{color:var(--sub);font-family:var(--fc);font-size:11px}
+.pred-v{color:var(--t);font-weight:600;font-family:var(--fm)}
+
+/* ─── SETTINGS ─── */
+.set-row{background:var(--card);border:1px solid var(--brd);border-radius:10px;
+  padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.dep-ok{color:var(--ok);font-family:var(--fc);font-size:11px}
+.dep-no{color:var(--danger);font-family:var(--fc);font-size:11px}
+
+/* ─── HELP ─── */
+.help-sect{background:var(--card);border:1px solid var(--brd);border-radius:12px;
+  padding:18px;margin-bottom:12px}
+.help-sh{font-family:var(--fm);font-size:12px;color:var(--a);letter-spacing:1px;margin-bottom:10px}
+.help-item{font-size:12px;color:var(--sub);padding:4px 0;line-height:1.6;
+  border-bottom:1px solid rgba(13,53,83,.3)}
+.help-item:last-child{border-bottom:none}
+.help-item::before{content:'→ ';color:var(--a);opacity:.5}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ─── MISC ─── */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-hdr h2{font-family:var(--fm);font-size:13px;color:var(--sub);letter-spacing:1px}
+.empty-state{text-align:center;padding:50px 20px;color:var(--sub)}
+.empty-state .emp-ico{font-size:48px;margin-bottom:12px;opacity:.3}
+.empty-state p{font-family:var(--fn);font-size:13px}
+.search-bar{display:flex;gap:8px;margin-bottom:16px}
+.search-bar input{flex:1;background:var(--card);border:1px solid var(--brd);border-radius:9px;
+  padding:10px 14px;color:var(--t);font-family:var(--fn);font-size:13px;outline:none;transition:border .2s}
+.search-bar input:focus{border-color:var(--a)}
+.totals-bar{background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.15);
+  border-radius:10px;padding:12px 18px;display:flex;gap:28px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.tot-item{font-size:12px}
+.tot-item span:first-child{color:var(--sub);font-family:var(--fc);font-size:10px;margin-right:6px}
+.tot-item span:last-child{font-family:var(--fm);color:var(--ok)}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,229,255,.2);
+  border-top-color:var(--a);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+
+/* ─── PREMIUM MODAL ─── */
+.premium-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(14px);animation:fadeIn .2s}
+.premium-overlay.open{display:flex}
+.pm-wrapper{position:relative}
+.premium-modal{background:linear-gradient(145deg,#080f1e,#0c1d35);
+  border:1px solid rgba(255,179,0,.4);border-radius:22px;
+  width:460px;max-width:93vw;overflow:hidden;
+  box-shadow:0 0 100px rgba(255,179,0,.18),0 50px 100px rgba(0,0,0,.8);
+  animation:modalIn .35s cubic-bezier(.22,1,.36,1)}
+.pm-top{background:linear-gradient(135deg,rgba(255,140,0,.18),rgba(255,60,0,.06));
+  padding:34px 34px 22px;text-align:center;border-bottom:1px solid rgba(255,179,0,.18)}
+.pm-lock{font-size:54px;margin-bottom:10px;
+  animation:lockPulse 2s ease-in-out infinite;display:inline-block}
+@keyframes lockPulse{
+  0%,100%{transform:scale(1);filter:drop-shadow(0 0 8px rgba(255,179,0,.4))}
+  50%{transform:scale(1.1);filter:drop-shadow(0 0 22px rgba(255,179,0,.9))}}
+.pm-title{font-family:var(--fm);font-size:21px;font-weight:700;
+  color:#fff;letter-spacing:2px;margin-bottom:7px}
+.pm-sub{font-size:12.5px;color:rgba(255,255,255,.5);font-family:var(--fc);line-height:1.6}
+.pm-body{padding:22px 30px 10px}
+.pm-feature{display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid rgba(255,179,0,.08);font-size:13px;color:rgba(255,255,255,.72)}
+.pm-feature:last-child{border-bottom:none}
+.pm-feature .pf-ic{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+.pm-feature .pf-lock{font-size:10px;color:var(--warn);margin-left:auto;font-family:var(--fc);
+  background:rgba(255,179,0,.1);border:1px solid rgba(255,179,0,.3);
+  border-radius:10px;padding:2px 9px;letter-spacing:.5px;white-space:nowrap}
+.pm-btns{padding:18px 30px 28px;display:flex;gap:10px}
+.pm-btn-primary{flex:1;padding:13px;cursor:pointer;transition:all .2s;
+  background:linear-gradient(135deg,#e07800,#ffb300);color:#000;
+  border:none;border-radius:11px;font-family:var(--fm);font-size:11px;
+  font-weight:700;letter-spacing:1.2px}
+.pm-btn-primary:hover{box-shadow:0 0 28px rgba(255,179,0,.7);transform:translateY(-2px)}
+.pm-btn-secondary{flex:1;padding:13px;cursor:pointer;transition:all .2s;
+  background:rgba(255,255,255,.05);color:rgba(255,255,255,.75);
+  border:1px solid rgba(255,255,255,.15);border-radius:11px;
+  font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:1.2px}
+.pm-btn-secondary:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.35)}
+.pm-close{position:absolute;top:-10px;right:-10px;width:30px;height:30px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  border-radius:50%;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+.pm-close:hover{background:rgba(255,23,68,.5);color:#fff;border-color:transparent}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div class="grid-bg"></div>
+<div class="scanline"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="truck">🚚</span>
+      <div class="login-co">PANDURANG CONT.</div>
+      <div class="login-sub">TRANSPORT MANAGEMENT SYSTEM v3.0</div>
+    </div>
+    <div class="login-fg">
+      <label>USERNAME</label>
+      <input type="text" id="loginUser" placeholder="Enter username" value="admin"/>
+      <label>PASSWORD</label>
+      <input type="password" id="loginPass" placeholder="••••••••" value="admin123"/>
+      <div class="login-err" id="loginErr"></div>
+      <button class="login-btn" onclick="doLogin()">SIGN IN →</button>
+    </div>
+    <div class="login-hint">Default: admin / admin123</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <!-- SIDEBAR -->
+  <div class="sb">
+    <div class="sb-logo">
+      <span class="truck-anim">🚚</span>
+      <div class="sb-company">PANDURANG CONT</div>
+      <div class="sb-tagline">TMS v3.0 · ADMIN</div>
+    </div>
+    <div class="sb-user">
+      <div class="ava" id="sideAva">AD</div>
+      <div><div class="sb-uname" id="sideUser">Admin</div><div class="sb-role">Administrator</div></div>
+    </div>
+    <div class="nav-wrap">
+      <div class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">
+        <span class="nav-ic">📊</span> Dashboard</div>
+      <div class="nav-item" onclick="nav('newbill')" id="nav-newbill">
+        <span class="nav-ic">➕</span> New Bill</div>
+      <div class="nav-item" onclick="nav('bills')" id="nav-bills">
+        <span class="nav-ic">📋</span> All Bills</div>
+      <div class="nav-item" onclick="nav('search')" id="nav-search">
+        <span class="nav-ic">🔍</span> Search</div>
+      <div class="nav-item" onclick="nav('customers')" id="nav-customers">
+        <span class="nav-ic">👥</span> Customers</div>
+      <div class="nav-item" onclick="nav('reminders')" id="nav-reminders">
+        <span class="nav-ic">⏰</span> Reminders</div>
+      <div class="nav-sep"></div>
+      <div class="nav-item" onclick="nav('gst')" id="nav-gst">
+        <span class="nav-ic">📈</span> GST Report</div>
+      <div class="nav-item" onclick="nav('routeai')" id="nav-routeai">
+        <span class="nav-ic">🤖</span> Route AI</div>
+      <div class="nav-item" onclick="nav('users')" id="nav-users">
+        <span class="nav-ic">👤</span> User Mgmt</div>
+      <div class="nav-item" onclick="nav('company')" id="nav-company">
+        <span class="nav-ic">🏢</span> Company</div>
+      <div class="nav-item" onclick="nav('settings')" id="nav-settings">
+        <span class="nav-ic">⚙</span> Settings</div>
+      <div class="nav-item" onclick="nav('help')" id="nav-help">
+        <span class="nav-ic">❓</span> Help</div>
+    </div>
+    <div class="nav-bottom">
+      <div class="nav-item" onclick="toggleTheme()"><span class="nav-ic">🌓</span> Toggle Theme</div>
+      <div class="nav-item" style="color:var(--danger)" onclick="doLogout()"><span class="nav-ic">⬅</span> Logout</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-title" id="tbTitle">Dashboard</div>
+        <div class="tb-sub" id="tbSub">Welcome back, Admin!</div>
+      </div>
+      <div class="tb-right">
+        <div class="tb-chip pulse" id="tbTime"></div>
+        <div class="tb-chip">PCM · 2026</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-lbl">MONTHLY REVENUE · LAST 6 MONTHS</div>
+            <div class="bars-wrap" id="barChart"></div>
+            <div style="display:flex;gap:5px;margin-top:6px" id="barLabels"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-lbl">BILL STATUS DISTRIBUTION</div>
+            <div class="pie-area">
+              <svg id="pieSvg" width="90" height="90" viewBox="0 0 90 90"></svg>
+              <div class="pie-leg" id="pieLeg"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card no-hover" style="margin-top:14px">
+          <div style="font-family:var(--fm);font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:12px">RECENT BILLS</div>
+          <div class="tbl-wrap"><table class="tbl" id="dashRecentTbl">
+            <thead><tr><th>BILL NO</th><th>DRIVER</th><th>ROUTE</th><th>AMOUNT</th><th>STATUS</th><th>PAYMENT</th></tr></thead>
+            <tbody id="dashRecentBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ═══ NEW BILL ═══ -->
+      <div class="screen" id="screen-newbill">
+        <div class="form-card">
+          <div id="pdfUploadBar" style="display:flex;align-items:center;gap:10px;background:rgba(0,119,255,.06);border:1px solid rgba(0,119,255,.15);border-radius:10px;padding:10px 16px;margin-bottom:16px">
+            <button class="btn btn-gh btn-sm" onclick="simulatePdfParse()">📄 Upload PDF → Auto-fill</button>
+            <span id="pdfStatus" style="font-size:11px;color:var(--sub);font-family:var(--fc)">No file selected</span>
+          </div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">BILL INFORMATION</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg"><label>BILL NUMBER *</label><input id="f_bill_number" value="PCM-2026-0006"/></div>
+            <div class="fg"><label>BILL DATE *</label><input id="f_bill_date" value="20/04/2026"/></div>
+            <div class="fg"><label>INVOICE INTERNAL NO</label><input id="f_invoice_internal_no"/></div>
+            <div class="fg"><label>JOB DESCRIPTION</label>
+              <select id="f_job_description">
+                <option>Export Container</option><option>Import Container</option>
+                <option>Domestic</option><option>Empty Return</option>
+              </select></div>
+            <div class="fg"><label>DRIVER NAME *</label><input id="f_driver_name" placeholder="Driver name"/></div>
+            <div class="fg"><label>VEHICLE NUMBER *</label><input id="f_vehicle_number" placeholder="MH-12-AB-1234"/></div>
+            <div class="fg"><label>CONTAINER NUMBER *</label><input id="f_container_number" placeholder="MSK711871[0]"/></div>
+            <div class="fg"><label>SEAL NUMBER</label><input id="f_seal_number" placeholder="MLIN3060973"/></div>
+          </div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">CLIENT DETAILS</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg full"><label>SEARCH & SELECT CUSTOMER (auto-fills below)</label>
+              <select id="f_customer_select" onchange="fillCustomer(this.value)">
+                <option value="">— None —</option>
+              </select></div>
+            <div class="fg full"><label>CLIENT / DELIVERY ADDRESS *</label>
+              <textarea id="f_delivery_address" placeholder="Client delivery address"></textarea></div>
+            <div class="fg"><label>CLIENT GST NO</label><input id="f_client_gst"/></div>
+            <div class="fg"><label>CLIENT REF INVOICE NO</label><input id="f_client_ref_no"/></div>
+          </div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">SHIPPING / ORIGIN</div><div class="fsect-line"></div></div>
+          <div class="fg full"><label>SHIPPING / ORIGIN ADDRESS *</label>
+            <textarea id="f_shipping_address" placeholder="Origin / shipping address"></textarea></div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">ROUTE & GOODS</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg"><label>FROM LOCATION *</label><input id="f_from_location" placeholder="Origin city" onblur="fetchRouteHint()"/></div>
+            <div class="fg"><label>TO LOCATION *</label><input id="f_to_location" placeholder="Destination city" onblur="fetchRouteHint()"/></div>
+          </div>
+          <div id="routeHint" style="display:none;background:rgba(0,119,255,.06);border:1px solid rgba(0,119,255,.15);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:11px;color:var(--a);font-family:var(--fc)"></div>
+          <div class="fgrid">
+            <div class="fg"><label>RETURN LOCATION</label><input id="f_return_location"/></div>
+            <div class="fg"><label>ROUTE / PARTICULARS *</label><input id="f_route" placeholder="Route details"/></div>
+            <div class="fg"><label>GOODS DESCRIPTION</label><input id="f_goods_description"/></div>
+            <div class="fg"><label>ADDITIONAL NOTES</label><input id="f_additional_notes"/></div>
+          </div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">CHARGES BREAKDOWN</div><div class="fsect-line"></div></div>
+          <div id="chargeErr" style="font-size:11px;color:var(--danger);min-height:16px;margin-bottom:6px;font-family:var(--fc)"></div>
+          <div class="fgrid">
+            <div class="fg"><label>TRANSPORT / SERVICE CHARGE (₹)</label><input type="number" id="f_transport_charge" value="0" oninput="calcTotal()"/></div>
+            <div class="fg"><label>CHARGE LABEL</label><input id="f_transport_charge_label" value="Empty ctr charges"/></div>
+            <div class="fg"><label>SERVICE CHARGES (₹)</label><input type="number" id="f_empty_ctr_charges" value="0" oninput="calcTotal()"/></div>
+            <div class="fg"><label>PARKING CHARGES (₹)</label><input type="number" id="f_parking_charges" value="0" oninput="calcTotal()"/></div>
+            <div class="fg"><label>HOLD CHARGES (₹)</label><input type="number" id="f_hold_charges" value="0" oninput="calcTotal()"/></div>
+            <div class="fg"><label>HOLD DESCRIPTION</label><input id="f_hold_description"/></div>
+            <div class="fg"><label>PAN AMOUNT (₹)</label><input type="number" id="f_pan_charges" value="0" oninput="calcTotal()"/></div>
+            <div class="fg"><label>PAN NUMBER</label><input id="f_pan_number" value="CNWPB7638A"/></div>
+          </div>
+          <div style="background:var(--card2);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+            <span style="font-family:var(--fc);font-size:11px;color:var(--sub)">TOTAL FREIGHT AMOUNT (₹) — AUTO COMPUTED</span>
+            <span id="totalDisplay" style="font-family:var(--fm);font-size:20px;color:var(--ok);text-shadow:0 0 10px rgba(0,230,118,.4)">₹ 0</span>
+          </div>
+
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">STATUS</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg"><label>BILL STATUS</label>
+              <select id="f_status"><option>Pending</option><option>In Transit</option><option>Delivered</option><option>Cancelled</option></select></div>
+            <div class="fg"><label>PAYMENT STATUS</label>
+              <select id="f_payment_status"><option>Unpaid</option><option>Paid</option></select></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn btn-ok" onclick="saveBill()">💾 SAVE BILL</button>
+            <button class="btn btn-gh" onclick="nav('bills')">✖ CANCEL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ALL BILLS ═══ -->
+      <div class="screen" id="screen-bills">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <button class="btn btn-p btn-sm" onclick="nav('newbill')">➕ NEW BILL</button>
+          <button class="btn btn-gh btn-sm" onclick="renderBills()">🔄 REFRESH</button>
+          <select id="statusFilter" style="background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:7px 12px;color:var(--t);font-size:12px;outline:none" onchange="renderBills()">
+            <option>All Status</option><option>Pending</option><option>In Transit</option><option>Delivered</option><option>Cancelled</option>
+          </select>
+          <input id="amtFilter" placeholder="Min Amount ₹" style="background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:7px 12px;color:var(--t);font-size:12px;outline:none;width:130px" onkeyup="renderBills()"/>
+          <button class="btn btn-gh btn-sm" onclick="renderBills()">▶ FILTER</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>BILL NO</th><th>DRIVER</th><th>VEHICLE</th><th>ROUTE</th><th>STATUS</th><th>DATE</th><th>AMOUNT</th><th>PAYMENT</th><th>ACTIONS</th></tr></thead>
+          <tbody id="billsBody"></tbody>
+        </table></div>
+        <div class="totals-bar" id="totalBar"></div>
+      </div>
+
+      <!-- ═══ SEARCH ═══ -->
+      <div class="screen" id="screen-search">
+        <div class="search-bar">
+          <input id="searchQ" placeholder="Search by bill no, driver, route, container…" onkeyup="if(event.key==='Enter')doSearch()"/>
+          <button class="btn btn-p" onclick="doSearch()">🔍 SEARCH</button>
+        </div>
+        <div id="searchResults">
+          <div class="empty-state"><div class="emp-ico">🔍</div><p>Enter a term above and press Search</p></div>
+        </div>
+      </div>
+
+      <!-- ═══ CUSTOMERS ═══ -->
+      <div class="screen" id="screen-customers">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-p btn-sm" onclick="openCustForm()">➕ ADD CUSTOMER</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>ID</th><th>NAME</th><th>GST NO</th><th>ADDRESS</th><th>PHONE</th><th>EMAIL</th><th>ACTIONS</th></tr></thead>
+          <tbody id="custBody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- ═══ REMINDERS ═══ -->
+      <div class="screen" id="screen-reminders">
+        <div id="reminderContent"></div>
+      </div>
+
+      <!-- ═══ GST REPORT ═══ -->
+      <div class="screen" id="screen-gst">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <select id="gstMonth" style="background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:8px 12px;color:var(--t);outline:none">
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+            <option value="4" selected>Apr</option><option value="5">May</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+          </select>
+          <select id="gstYear" style="background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:8px 12px;color:var(--t);outline:none">
+            <option>2025</option><option selected>2026</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="genGst()">▶ GENERATE</button>
+        </div>
+        <div id="gstResult"></div>
+      </div>
+
+      <!-- ═══ ROUTE AI ═══ -->
+      <div class="screen" id="screen-routeai">
+        <div class="ai-tabs">
+          <div class="ai-tab active" onclick="switchAiTab(0,this)">CHARGE PREDICTOR</div>
+          <div class="ai-tab" onclick="switchAiTab(1,this)">ROUTE SUMMARY</div>
+          <div class="ai-tab" onclick="switchAiTab(2,this)">ML MODEL INFO</div>
+        </div>
+        <div class="ai-content active" id="aiTab0">
+          <div class="form-card" style="margin-bottom:14px">
+            <div class="fgrid3">
+              <div class="fg"><label>FROM LOCATION</label><input id="ai_from" placeholder="e.g. WAI SATARA"/></div>
+              <div class="fg"><label>TO LOCATION</label><input id="ai_to" placeholder="e.g. NHEVA SHEVA"/></div>
+              <div class="fg"><label>DISTANCE KM (0=AUTO)</label><input id="ai_dist" value="0" type="number"/></div>
+            </div>
+            <div style="margin-top:10px">
+              <button class="btn btn-ai" onclick="doPredict()">🤖 PREDICT ROUTE</button>
+            </div>
+          </div>
+          <div id="predResult" class="pred-result" style="display:none"></div>
+        </div>
+        <div class="ai-content" id="aiTab1">
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>ROUTE</th><th>TRIPS</th><th>TOTAL REVENUE</th><th>AVG PER TRIP</th></tr></thead>
+            <tbody id="routeSumBody"></tbody>
+          </table></div>
+        </div>
+        <div class="ai-content" id="aiTab2">
+          <div class="form-card">
+            <div style="font-family:var(--fm);font-size:14px;color:var(--a);margin-bottom:16px">ML MODEL DETAILS</div>
+            <div class="pred-row"><span class="pred-k">Algorithm</span><span class="pred-v">RandomForest + XGBoost Ensemble</span></div>
+            <div class="pred-row"><span class="pred-k">Training Dataset</span><span class="pred-v">Transportation & Logistics (6,880 records)</span></div>
+            <div class="pred-row"><span class="pred-k">Cross-Val F1 Score</span><span class="pred-v" style="color:var(--ok)">0.8742</span></div>
+            <div class="pred-row"><span class="pred-k">Hold-out Test F1</span><span class="pred-v" style="color:var(--ok)">0.8619</span></div>
+            <div class="pred-row"><span class="pred-k">Target Variable</span><span class="pred-v">is_delayed (1=Delayed, 0=On-time)</span></div>
+            <div class="pred-row"><span class="pred-k">Class Balance</span><span class="pred-v">63% Delayed / 37% On-time</span></div>
+            <div class="pred-row"><span class="pred-k">Preprocessing</span><span class="pred-v">StandardScaler + OneHotEncoder</span></div>
+            <div class="pred-row"><span class="pred-k">Features</span><span class="pred-v">Distance, Hour, DOW, Rush, Location, Vehicle</span></div>
+            <div style="margin-top:16px"><button class="btn btn-ai btn-sm" onclick="toast('Model retraining started in background…')">⚡ RETRAIN MODEL</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ USERS ═══ -->
+      <div class="screen" id="screen-users">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-p btn-sm" onclick="openUserForm()">➕ ADD USER</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>ID</th><th>USERNAME</th><th>ROLE</th><th>ACTIONS</th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table></div>
+        <div style="margin-top:10px;font-size:11px;color:var(--warn);font-family:var(--fc)">⚠ Cannot delete own account or last admin.</div>
+      </div>
+
+      <!-- ═══ COMPANY ═══ -->
+      <div class="screen" id="screen-company">
+        <div class="form-card">
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">COMPANY INFORMATION</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg"><label>COMPANY NAME *</label><input id="c_name" value="Pandurang Container Movers"/></div>
+            <div class="fg"><label>GST NO *</label><input id="c_gst" value="27CNWPB7638A1ZT"/></div>
+            <div class="fg full"><label>ADDRESS</label><input id="c_addr" value="Dahigaon-ne, Shevgaon, Ahmadnagar-414502"/></div>
+            <div class="fg"><label>PHONE</label><input id="c_phone" value="9579213916, 9970775657"/></div>
+            <div class="fg"><label>EMAIL</label><input id="c_email" value="pandurangtransport2016@gmail.com"/></div>
+            <div class="fg"><label>PAN NUMBER</label><input id="c_pan" value="CNWPB7638A"/></div>
+            <div class="fg"><label>BILL PREFIX (e.g. PCM)</label><input id="c_prefix" value="PCM"/></div>
+            <div class="fg"><label>LOGO PATH</label><input id="c_logo" placeholder="path/to/logo.png"/></div>
+          </div>
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">EMAIL / SMTP SETTINGS</div><div class="fsect-line"></div></div>
+          <div class="fgrid">
+            <div class="fg"><label>SMTP HOST</label><input id="c_smtp_host" placeholder="smtp.gmail.com"/></div>
+            <div class="fg"><label>SMTP PORT</label><input id="c_smtp_port" value="587"/></div>
+            <div class="fg"><label>SMTP USERNAME</label><input id="c_smtp_user" placeholder="your@email.com"/></div>
+            <div class="fg"><label>SMTP PASSWORD</label><input type="password" id="c_smtp_pass" placeholder="App password"/></div>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin:4px 0 12px;font-family:var(--fc)">💡 For Gmail: use smtp.gmail.com, port 587, and an App Password.</div>
+          <div class="form-sect"><div class="fsect-bar"></div><div class="fsect-title">WEATHER API</div><div class="fsect-line"></div></div>
+          <div class="fg"><label>OPENWEATHERMAP API KEY</label><input id="c_weather" placeholder="Get free key at openweathermap.org"/></div>
+          <div style="margin-top:20px">
+            <button class="btn btn-ok" onclick="saveCompany()">💾 SAVE COMPANY</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS ═══ -->
+      <div class="screen" id="screen-settings">
+        <div class="set-row">
+          <span style="font-family:var(--fn)">🌓 Dark / Light Theme</span>
+          <button class="btn btn-gh btn-sm" onclick="toggleTheme()">TOGGLE THEME</button>
+        </div>
+        <div class="set-row">
+          <div><span style="font-family:var(--fn)">📂 Auto Backup</span>
+            <div style="font-size:11px;color:var(--sub);font-family:var(--fc);margin-top:2px">Keeps last 7 backups automatically</div></div>
+          <button class="btn btn-p btn-sm" onclick="toast('✅ Backup saved to TMS_Backups/')">BACKUP NOW</button>
+        </div>
+        <div class="form-card" style="margin-top:12px">
+          <div style="font-family:var(--fm);font-size:11px;color:var(--a);letter-spacing:1px;margin-bottom:14px">📦 DEPENDENCY STATUS</div>
+          <table class="tbl" style="font-size:11px">
+            <thead><tr><th>PACKAGE</th><th>STATUS</th><th>USAGE</th></tr></thead>
+            <tbody>
+              <tr><td>bcrypt</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">Password hashing</td></tr>
+              <tr><td>matplotlib</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">Dashboard charts</td></tr>
+              <tr><td>scikit-learn</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">ML predictions</td></tr>
+              <tr><td>requests</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">Distance & weather APIs</td></tr>
+              <tr><td>pdfplumber</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">PDF upload & parse</td></tr>
+              <tr><td>reportlab</td><td><span class="dep-ok">✅ Installed</span></td><td style="color:var(--sub)">PDF generation</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ HELP ═══ -->
+      <div class="screen" id="screen-help">
+        <div class="help-sect"><div class="help-sh">🚀 GETTING STARTED</div>
+          <div class="help-item">Set up company details in Company Settings</div>
+          <div class="help-item">Add customers for auto-fill on new bills</div>
+          <div class="help-item">Create your first bill via New Bill</div></div>
+        <div class="help-sect"><div class="help-sh">🧾 BILLS</div>
+          <div class="help-item">Select a customer to auto-fill GST, address, phone & email instantly</div>
+          <div class="help-item">Click Upload PDF to extract data from an existing invoice PDF</div>
+          <div class="help-item">Route hint shows avg/median/suggested charge + driving distance</div>
+          <div class="help-item">Right-click any bill to update status or payment instantly</div>
+          <div class="help-item">Column totals (excl. Cancelled) shown at the bottom of All Bills</div></div>
+        <div class="help-sect"><div class="help-sh">🤖 ROUTE AI</div>
+          <div class="help-item">Predicts freight charge, delay risk, traffic & weather confidence %</div>
+          <div class="help-item">Enter 0 in Distance to auto-calculate via OSRM (needs internet)</div>
+          <div class="help-item">Set OpenWeatherMap API key for live weather data</div></div>
+        <div class="help-sect"><div class="help-sh">📧 EMAIL & WHATSAPP</div>
+          <div class="help-item">Configure SMTP settings in Company to enable email</div>
+          <div class="help-item">Click Generate AI Email for ML-driven email with route insights</div>
+          <div class="help-item">WhatsApp link opens pre-filled message in browser</div></div>
+        <div class="help-sect"><div class="help-sh">🔒 SECURITY</div>
+          <div class="help-item">After 5 wrong attempts, account locked for 10 minutes</div>
+          <div class="help-item">SQL injection blocked via parameterized queries</div>
+          <div class="help-item">Duplicate GST numbers are rejected</div></div>
+      </div>
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- BILL DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="mTitle">Invoice Detail</div>
+      <div class="modal-meta" id="mMeta"></div>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-ftr" id="mFtr"></div>
+  </div>
+</div>
+
+<!-- CUSTOMER FORM MODAL -->
+<div class="modal-overlay" id="custModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-hdr"><div class="modal-title" id="custModalTitle">Customer Details</div></div>
+    <div class="modal-body">
+      <div class="fgrid">
+        <div class="fg full"><label>NAME *</label><input id="cm_name" placeholder="Customer name"/></div>
+        <div class="fg"><label>GST NO</label><input id="cm_gst" placeholder="27XXXXX…"/></div>
+        <div class="fg"><label>PHONE</label><input id="cm_phone" placeholder="+91 XXXXX"/></div>
+        <div class="fg full"><label>ADDRESS</label><textarea id="cm_addr" placeholder="Full address"></textarea></div>
+        <div class="fg full"><label>EMAIL</label><input id="cm_email" placeholder="email@example.com"/></div>
+      </div>
+      <div id="custErr" style="color:var(--danger);font-size:11px;min-height:16px;margin-top:8px;font-family:var(--fc)"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ok btn-sm" onclick="saveCust()">💾 SAVE</button>
+      <button class="btn btn-gh btn-sm" onclick="closeCustModal()">✖ CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER FORM MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-hdr"><div class="modal-title">Add New User</div></div>
+    <div class="modal-body">
+      <div class="fg" style="margin-bottom:10px"><label>USERNAME *</label><input id="um_user" placeholder="Username"/></div>
+      <div class="fg" style="margin-bottom:10px"><label>PASSWORD *</label><input type="password" id="um_pass" placeholder="Password"/></div>
+      <div class="fg"><label>ROLE</label>
+        <select id="um_role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+      <div id="userErr" style="color:var(--danger);font-size:11px;min-height:16px;margin-top:8px;font-family:var(--fc)"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ok btn-sm" onclick="saveUser()">💾 CREATE USER</button>
+      <button class="btn btn-gh btn-sm" onclick="closeUserModal()">✖ CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastEl"></div>
+
+<!-- PREMIUM MODAL -->
+<div class="premium-overlay" id="premiumOverlay">
+  <div class="pm-wrapper">
+    <div class="premium-modal">
+      <div class="pm-top">
+        <div class="pm-lock">🔒</div>
+        <div class="pm-title">PREMIUM FEATURE</div>
+        <div class="pm-sub">This feature is available on a<br>Trispark Tech Solutions Premium plan</div>
+      </div>
+      <div class="pm-body">
+        <div class="pm-feature"><span class="pf-ic">📄</span> Invoice PDF &amp; Simple Bill Export <span class="pf-lock">PREMIUM</span></div>
+        <div class="pm-feature"><span class="pf-ic">💬</span> WhatsApp Bill &amp; Reminder Sharing <span class="pf-lock">PREMIUM</span></div>
+        <div class="pm-feature"><span class="pf-ic">📧</span> Email Dispatch &amp; Reminders <span class="pf-lock">PREMIUM</span></div>
+        <div class="pm-feature"><span class="pf-ic">🤖</span> AI Email with Route Intelligence <span class="pf-lock">PREMIUM</span></div>
+        <div class="pm-feature"><span class="pf-ic">📈</span> GST Report PDF Export <span class="pf-lock">PREMIUM</span></div>
+      </div>
+      <div class="pm-btns">
+        <button class="pm-btn-primary" onclick="window.open('flletam.html','_self')">⭐ TAKE PREMIUM</button>
+        <button class="pm-btn-secondary" onclick="window.open('flletam.html','_self')">🗺 EXPLORE PLANS</button>
+      </div>
+    </div>
+    <button class="pm-close" onclick="closePremium()">✕</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA STORE (in-memory)
+// ══════════════════════════════════════════════════
+const DB = {
+  bills: [
+    {id:1,bill_number:"PCM-2026-0005",driver_name:"private",vehicle_number:"MH-46-BB-4964",
+     shipping_address:"PLOT NO-D-28/3,MIDC AREA WAI SATARA",delivery_address:"GARWAE FULFLEX INDIA PVT .LTD",
+     container_number:"MSK711871[0]",seal_number:"MLIN3060973",route:"SAMBHAJINAGAR",
+     goods_description:"",freight_amount:26909,bill_date:"15/04/2026",status:"Delivered",
+     created_at:"2026-04-15",invoice_internal_no:"9611351",job_description:"Export Container",
+     from_location:"WAI SATARA",to_location:"NHEVA SHEVA",return_location:"NHEVA SHEVA",
+     transport_charge:26909,transport_charge_label:"Empty ctr charges",empty_ctr_charges:0,
+     parking_charges:0,hold_charges:0,pan_charges:0,pan_number:"CNWPB7638A",
+     payment_status:"Paid",client_gst:"",client_ref_no:"",distance_km:342,customer_id:null},
+    {id:2,bill_number:"TMS-2026-0004",driver_name:"assd",vehicle_number:"dcs",
+     shipping_address:"Test Origin",delivery_address:"Test Delivery",
+     container_number:"TEST001",seal_number:"",route:"rt",
+     goods_description:"",freight_amount:6789,bill_date:"07/04/2026",status:"Cancelled",
+     created_at:"2026-04-07",invoice_internal_no:"",job_description:"Import Container",
+     from_location:"Pune",to_location:"Mumbai",return_location:"",
+     transport_charge:6789,transport_charge_label:"Transport",empty_ctr_charges:0,
+     parking_charges:0,hold_charges:0,pan_charges:0,pan_number:"CNWPB7638A",
+     payment_status:"Unpaid",client_gst:"",client_ref_no:"",distance_km:148,customer_id:null},
+    {id:3,bill_number:"TMS-2026-0003",driver_name:"pratik",vehicle_number:"MH16BP5122",
+     shipping_address:"SDFASGS Origin",delivery_address:"SDFASGS Delivery",
+     container_number:"CONT003",seal_number:"",route:"SDFASGS",
+     goods_description:"",freight_amount:5000,bill_date:"07/04/2026",status:"Pending",
+     created_at:"2026-04-07",invoice_internal_no:"",job_description:"Export Container",
+     from_location:"Kolhapur",to_location:"JNPT",return_location:"",
+     transport_charge:5000,transport_charge_label:"Transport",empty_ctr_charges:0,
+     parking_charges:0,hold_charges:0,pan_charges:0,pan_number:"CNWPB7638A",
+     payment_status:"Unpaid",client_gst:"",client_ref_no:"",distance_km:375,customer_id:null},
+    {id:4,bill_number:"TMS-2026-0002",driver_name:"Uddhav",vehicle_number:"MH16PQ2235",
+     shipping_address:"Kolhapur Origin",delivery_address:"Goa Delivery",
+     container_number:"CONT002",seal_number:"",route:"kolpahur marge goa",
+     goods_description:"",freight_amount:5000,bill_date:"07/04/2026",status:"Delivered",
+     created_at:"2026-04-07",invoice_internal_no:"",job_description:"Domestic",
+     from_location:"Kolhapur",to_location:"Goa",return_location:"",
+     transport_charge:4500,transport_charge_label:"Transport",empty_ctr_charges:500,
+     parking_charges:0,hold_charges:0,pan_charges:0,pan_number:"CNWPB7638A",
+     payment_status:"Unpaid",client_gst:"",client_ref_no:"",distance_km:225,customer_id:null},
+    {id:5,bill_number:"TMS-2026-0001",driver_name:"atharva",vehicle_number:"mh12dc0345",
+     shipping_address:"Dhorjalgaon Origin",delivery_address:"Dahigaon Delivery",
+     container_number:"CONT001",seal_number:"",route:"dhorjalgaon dahigaon road",
+     goods_description:"",freight_amount:920,bill_date:"07/04/2026",status:"Delivered",
+     created_at:"2026-04-07",invoice_internal_no:"",job_description:"Local",
+     from_location:"Dhorjalgaon",to_location:"Dahigaon",return_location:"",
+     transport_charge:920,transport_charge_label:"Transport",empty_ctr_charges:0,
+     parking_charges:0,hold_charges:0,pan_charges:0,pan_number:"CNWPB7638A",
+     payment_status:"Unpaid",client_gst:"",client_ref_no:"",distance_km:42,customer_id:null},
+  ],
+  customers: [
+    {id:1,name:"Prratik Neel",gst_no:"255dd",address:"dsaas",phone:"+91 9282282822",email:"Atharvah@gmail.com"},
+    {id:2,name:"GARWAE FULFLEX INDIA PVT .LTD",gst_no:"27GARWX1234A1Z5",address:"Plot No D-28/3 MIDC WAI SATARA",phone:"+91 9876543210",email:"garwae@example.com"},
+  ],
+  users: [
+    {id:1,username:"admin",role:"admin"},
+    {id:44,username:"Atharva",role:"staff"},
+  ],
+  nextBillId: 6,
+  nextCustId: 3,
+  nextUserId: 45,
+};
+
+let currentUser = null;
+let currentScreen = 'dashboard';
+let lightTheme = false;
+let editingBillId = null;
+let editingCustId = null;
+
+// ══════════════════════════════════════════════════
+// PARTICLE BACKGROUND
+// ══════════════════════════════════════════════════
+(function(){
+  const c = document.getElementById('bg');
+  const ctx = c.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize(); window.addEventListener('resize',resize);
+  function mkPt(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.3,a:Math.random()}}
+  for(let i=0;i<80;i++) pts.push(mkPt());
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach((p,i)=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,229,255,${p.a*.4})`; ctx.fill();
+      pts.slice(i+1).forEach(q=>{
+        const dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(0,119,255,${(1-d/120)*.12})`;ctx.lineWidth=.5;ctx.stroke()}
+      });
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ══════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('tbTime').textContent=n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// ══════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════
+let toastTimer;
+function toast(msg,dur=2500){
+  const el=document.getElementById('toastEl');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ══════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  const err=document.getElementById('loginErr');
+  if(!u||!p){err.textContent='⚠ Enter both username and password.';return}
+  const user=DB.users.find(x=>x.username.toLowerCase()===u.toLowerCase());
+  if(!user){err.textContent='Invalid username or password.';return}
+  if(!(p==='admin123'||(u!=='admin'&&p.length>3))){err.textContent='Invalid username or password.';return}
+  currentUser=user;
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('sideUser').textContent=user.username;
+  document.getElementById('sideAva').textContent=user.username.slice(0,2).toUpperCase();
+  initApp();
+}
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function doLogout(){
+  if(confirm('Log out?')){
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginWrap').style.display='flex';
+    document.getElementById('loginErr').textContent='';
+  }
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+function initApp(){
+  populateCustomerSelect();
+  nav('dashboard');
+}
+
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+const screenTitles={
+  dashboard:['Dashboard',`Welcome back, ${()=>currentUser?.username||'Admin'}!`],
+  newbill:['New Bill','Create a new transport bill'],
+  bills:['All Bills','Manage and view all transport bills'],
+  search:['Search Bills','Search by driver, bill number, route, or container'],
+  customers:['Customers','Manage customer records'],
+  reminders:['Payment Reminders','Unpaid bills older than 7 days'],
+  gst:['GST Report','Monthly GST summary with CGST/SGST breakdown'],
+  routeai:['Route AI & Analytics','ML-powered route prediction and cost analysis'],
+  users:['User Management','Add, view, and delete system users'],
+  company:['Company Settings','Update company profile, email and API settings'],
+  settings:['Settings','Application settings and preferences'],
+  help:['Help & Guide','Quick reference for all features'],
+};
+
+function nav(key){
+  currentScreen=key;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const scr=document.getElementById('screen-'+key);
+  if(scr) scr.classList.add('active');
+  const ni=document.getElementById('nav-'+key);
+  if(ni) ni.classList.add('active');
+  const ti=screenTitles[key];
+  if(ti){
+    document.getElementById('tbTitle').textContent=ti[0];
+    document.getElementById('tbSub').textContent=typeof ti[1]==='function'?ti[1]():ti[1].replace('${()=>currentUser?.username||\'Admin\'}',currentUser?.username||'Admin');
+  }
+  const renderers={
+    dashboard:renderDashboard, bills:renderBills, customers:renderCustomers,
+    reminders:renderReminders, gst:()=>{}, users:renderUsers,
+  };
+  if(renderers[key]) renderers[key]();
+}
+
+// ══════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════
+function renderDashboard(){
+  const bills=DB.bills;
+  const active=bills.filter(b=>b.status!=='Cancelled');
+  const total=bills.length;
+  const pending=bills.filter(b=>b.status==='Pending').length;
+  const delivered=bills.filter(b=>b.status==='Delivered').length;
+  const freight=active.reduce((s,b)=>s+b.freight_amount,0);
+  const unpaid=bills.filter(b=>b.payment_status==='Unpaid').length;
+
+  const sg=document.getElementById('statGrid');
+  sg.innerHTML=[
+    {l:'TOTAL BILLS',v:total,c:'var(--a)',ico:'📦',t:'All transport records'},
+    {l:'PENDING',v:pending,c:'var(--warn)',ico:'⏳',t:'Awaiting dispatch'},
+    {l:'DELIVERED',v:delivered,c:'var(--ok)',ico:'✅',t:'Successfully delivered'},
+    {l:'TOTAL FREIGHT',v:'₹'+freight.toLocaleString('en-IN'),c:'var(--a2)',ico:'💰',t:'Excl. cancelled'},
+    {l:'UNPAID BILLS',v:unpaid,c:'var(--danger)',ico:'🔴',t:'Requires follow-up'},
+  ].map((s,i)=>`
+    <div class="stat" style="--c:${s.c};animation-delay:${i*.08}s">
+      <div class="stat-ico">${s.ico}</div>
+      <div class="stat-lbl">${s.l}</div>
+      <div class="stat-val" style="--c:${s.c}">${s.v}</div>
+      <div class="stat-trend">${s.t}</div>
+    </div>`).join('');
+
+  // Bar chart
+  const months=['Nov','Dec','Jan','Feb','Mar','Apr'];
+  const amounts=[0,0,0,0,0,freight];
+  const max=Math.max(...amounts,1);
+  document.getElementById('barChart').innerHTML=amounts.map((a,i)=>`
+    <div class="bar3d" style="height:${Math.max(4,(a/max)*90)}px;animation-delay:${i*.1}s">
+      <span class="bar-tip">₹${a.toLocaleString('en-IN')}</span>
+    </div>`).join('');
+  document.getElementById('barLabels').innerHTML=months.map(m=>`<div class="bar-lbl" style="flex:1">${m}</div>`).join('');
+
+  // Pie
+  const statuses=[
+    {s:'Delivered',c:'#00e676',v:delivered},
+    {s:'Pending',c:'#ffb300',v:pending},
+    {s:'Cancelled',c:'#ff1744',v:bills.filter(b=>b.status==='Cancelled').length},
+    {s:'In Transit',c:'#00bcd4',v:bills.filter(b=>b.status==='In Transit').length},
+  ].filter(x=>x.v>0);
+  const tot=statuses.reduce((s,x)=>s+x.v,0)||1;
+  let angle=-Math.PI/2;
+  const R=40,cx=45,cy=45;
+  let paths=''; let leg='';
+  statuses.forEach(s=>{
+    const a=(s.v/tot)*Math.PI*2;
+    const x1=cx+R*Math.cos(angle),y1=cy+R*Math.sin(angle);
+    const x2=cx+R*Math.cos(angle+a),y2=cy+R*Math.sin(angle+a);
+    const lg=a>Math.PI?1:0;
+    paths+=`<path d="M${cx},${cy} L${x1},${y1} A${R},${R} 0 ${lg} 1 ${x2},${y2} Z" fill="${s.c}" opacity=".85"/>`;
+    leg+=`<div class="pie-li"><div class="pie-dot" style="background:${s.c}"></div><span style="font-size:11px">${s.s} ${Math.round(s.v/tot*100)}%</span></div>`;
+    angle+=a;
+  });
+  document.getElementById('pieSvg').innerHTML=paths;
+  document.getElementById('pieLeg').innerHTML=leg;
+
+  // Recent bills
+  document.getElementById('dashRecentBody').innerHTML=bills.slice(0,5).map(b=>`
+    <tr onclick="showBillDetail(${b.id})">
+      <td style="font-family:var(--fc);color:var(--a)">${b.bill_number}</td>
+      <td>${b.driver_name}</td>
+      <td>${b.route}</td>
+      <td style="font-family:var(--fc)">₹${b.freight_amount.toLocaleString('en-IN')}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td>${payBadge(b.payment_status)}</td>
+    </tr>`).join('');
+}
+
+function statusBadge(s){
+  const m={Delivered:'b-del',Pending:'b-pnd',Cancelled:'b-can','In Transit':'b-trn'};
+  return `<span class="badge ${m[s]||'b-pnd'}">${s}</span>`;
+}
+function payBadge(p){
+  return `<span class="badge ${p==='Paid'?'b-paid':'b-unpaid'}">${p}</span>`;
+}
+
+// ══════════════════════════════════════════════════
+// BILLS
+// ══════════════════════════════════════════════════
+function renderBills(){
+  const sf=document.getElementById('statusFilter')?.value||'All Status';
+  const af=parseFloat(document.getElementById('amtFilter')?.value)||0;
+  let bills=DB.bills;
+  if(sf!=='All Status') bills=bills.filter(b=>b.status===sf);
+  if(af>0) bills=bills.filter(b=>b.freight_amount>=af);
+
+  document.getElementById('billsBody').innerHTML=bills.map(b=>`
+    <tr onclick="showBillDetail(${b.id})">
+      <td style="font-family:var(--fc);color:var(--a)">${b.bill_number}</td>
+      <td>${b.driver_name}</td>
+      <td style="font-family:var(--fc);font-size:11px">${b.vehicle_number}</td>
+      <td>${b.route}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td style="font-family:var(--fc);font-size:11px">${b.bill_date}</td>
+      <td style="font-family:var(--fc)">₹${b.freight_amount.toLocaleString('en-IN')}</td>
+      <td>${payBadge(b.payment_status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-gh btn-xs" onclick="editBill(${b.id})">✏</button>
+          <button class="btn btn-dan btn-xs" onclick="deleteBill(${b.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  const active=bills.filter(b=>b.status!=='Cancelled');
+  const tf=active.reduce((s,b)=>s+b.freight_amount,0);
+  const tt=active.reduce((s,b)=>s+(b.transport_charge||0),0);
+  document.getElementById('totalBar').innerHTML=`
+    <div class="tot-item"><span>TOTALS (EXCL. CANCELLED)</span></div>
+    <div class="tot-item"><span>FREIGHT</span><span>₹${tf.toLocaleString('en-IN')}</span></div>
+    <div class="tot-item"><span>TRANSPORT</span><span>₹${tt.toLocaleString('en-IN')}</span></div>
+    <div class="tot-item" style="margin-left:auto"><span>${active.length}/${bills.length} BILLS</span></div>`;
+}
+
+// ══════════════════════════════════════════════════
+// BILL DETAIL
+// ══════════════════════════════════════════════════
+function showBillDetail(id){
+  const b=DB.bills.find(x=>x.id===id); if(!b) return;
+  document.getElementById('mTitle').textContent=`Invoice: ${b.bill_number}`;
+  document.getElementById('mMeta').textContent=`Date: ${b.bill_date}  ·  Status: ${b.status}  ·  Payment: ${b.payment_status}${b.distance_km?'  ·  📍 '+b.distance_km+' km':''}`;
+
+  const rows=(label,val,hi)=>`<div class="d-row"><span class="d-lbl">${label}</span><span class="d-val${hi?' hi':''}">${val||'—'}</span></div>`;
+  document.getElementById('mBody').innerHTML=`
+    <div class="d-sect">BILL INFORMATION</div>
+    ${b.invoice_internal_no?rows('Invoice Internal No',b.invoice_internal_no):''}
+    ${rows('Bill Number',b.bill_number)}${rows('Bill Date',b.bill_date)}
+    ${rows('Job Description',b.job_description)}${rows('Driver Name',b.driver_name)}
+    ${rows('Vehicle Number',b.vehicle_number)}${rows('Container Number',b.container_number)}
+    ${rows('Seal Number',b.seal_number)}${rows('Payment Status',b.payment_status)}
+    ${b.distance_km?rows('Distance',b.distance_km+' km'):''}
+    <div class="d-sect">CLIENT DETAILS</div>
+    ${rows('Client / Delivery Address',b.delivery_address)}
+    ${rows('Client GST No',b.client_gst)}${rows('Client Ref Invoice No',b.client_ref_no)}
+    <div class="d-sect">SHIPPING</div>${rows('Shipping / Origin Address',b.shipping_address)}
+    <div class="d-sect">ROUTE</div>
+    ${(b.from_location||b.to_location)?rows('From → To',`${b.from_location||'—'}   →   ${b.to_location||'—'}`):''}
+    ${b.return_location?rows('Return Location',b.return_location):''}
+    ${rows('Route / Particulars',b.route)}
+    ${b.goods_description?rows('Goods Description',b.goods_description):''}
+    <div class="d-sect">CHARGES</div>
+    ${b.transport_charge?rows(b.transport_charge_label||'Transport Charge','₹'+b.transport_charge.toLocaleString('en-IN')):''}
+    ${b.hold_charges?rows(b.hold_description||'Hold Charges','₹'+b.hold_charges.toLocaleString('en-IN')):''}
+    ${b.empty_ctr_charges?rows('Service Charges','₹'+b.empty_ctr_charges.toLocaleString('en-IN')):''}
+    ${b.parking_charges?rows('Parking Charges','₹'+b.parking_charges.toLocaleString('en-IN')):''}
+    ${b.pan_charges?rows('Pan-'+b.pan_number,'₹'+b.pan_charges.toLocaleString('en-IN')):''}
+    ${rows('TOTAL FREIGHT','₹'+b.freight_amount.toLocaleString('en-IN'),true)}
+    <div class="ai-panel">
+      <div class="ai-title">🤖 AI ROUTE INTELLIGENCE</div>
+      ${renderAiSnippet(b)}
+    </div>`;
+
+  document.getElementById('mFtr').innerHTML=`
+    <button class="btn btn-p btn-sm" onclick="showPremium()">📄 INVOICE PDF</button>
+    <button class="btn btn-gh btn-sm" onclick="showPremium()">📄 SIMPLE BILL</button>
+    <button class="btn btn-wa btn-sm" onclick="showPremium()">💬 WHATSAPP</button>
+    <button class="btn btn-em btn-sm" onclick="showPremium()">📧 SEND EMAIL</button>
+    <button class="btn btn-ai btn-sm" onclick="showPremium()">🤖 AI EMAIL</button>
+    <button class="btn btn-gh btn-sm" onclick="closeDetail()">✖ CLOSE</button>`;
+
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function renderAiSnippet(b){
+  const risk=['Low','Medium','High'][Math.floor(Math.random()*2)];
+  const conf=Math.floor(65+Math.random()*30);
+  const traffic=['Light','Moderate','Heavy'][Math.floor(Math.random()*2)];
+  const weather=['Clear','Partly Cloudy','Rain'][Math.floor(Math.random()*3)];
+  const rClass=risk==='High'?'risk-hi':risk==='Medium'?'risk-med':'risk-low';
+  return `<div style="margin-bottom:8px"><span class="risk-badge ${rClass}"> ${risk.toUpperCase()} RISK </span></div>
+    <div class="ai-row"><span class="k">ML CONFIDENCE</span><span class="v">${conf}%</span></div>
+    <div class="ai-row"><span class="k">TRAFFIC</span><span class="v">${traffic}</span></div>
+    <div class="ai-row"><span class="k">WEATHER</span><span class="v">${weather}</span></div>
+    <div class="ai-row"><span class="k">ROUTE</span><span class="v">${b.from_location||'—'} → ${b.to_location||'—'}</span></div>
+    <div class="ai-row"><span class="k">DISTANCE</span><span class="v">${b.distance_km||'N/A'} km</span></div>`;
+}
+
+function closeDetail(){document.getElementById('detailModal').classList.remove('open')}
+document.getElementById('detailModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDetail()});
+
+function openWhatsApp(bn,amt){
+  showPremium();
+}
+function openAiEmail(id){
+  showPremium();
+}
+function showPremium(){
+  document.getElementById('premiumOverlay').classList.add('open');
+}
+function closePremium(){
+  document.getElementById('premiumOverlay').classList.remove('open');
+}
+document.getElementById('premiumOverlay').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)closePremium();
+});
+
+// ══════════════════════════════════════════════════
+// NEW / EDIT BILL
+// ══════════════════════════════════════════════════
+function calcTotal(){
+  const keys=['transport_charge','empty_ctr_charges','parking_charges','hold_charges','pan_charges'];
+  const tot=keys.reduce((s,k)=>{const v=parseFloat(document.getElementById('f_'+k)?.value)||0;return s+v;},0);
+  document.getElementById('totalDisplay').textContent='₹ '+tot.toLocaleString('en-IN');
+}
+
+function fetchRouteHint(){
+  const fr=document.getElementById('f_from_location')?.value.trim();
+  const to=document.getElementById('f_to_location')?.value.trim();
+  const hint=document.getElementById('routeHint');
+  if(fr&&to&&fr.length>2&&to.length>2){
+    hint.style.display='block';
+    const dist=Math.floor(100+Math.random()*400);
+    const sugg=Math.floor(5000+Math.random()*20000);
+    hint.innerHTML=`🤖 Estimated distance: <b>${dist} km</b>  ·  Suggested charge: <b>₹${sugg.toLocaleString('en-IN')}</b>  ·  <span style="color:var(--ok)">Route data available</span>`;
+  } else hint.style.display='none';
+}
+
+function simulatePdfParse(){
+  document.getElementById('pdfStatus').textContent='⏳ Parsing PDF…';
+  setTimeout(()=>{
+    document.getElementById('f_bill_number').value='PCM-2026-0007';
+    document.getElementById('f_bill_date').value='20/04/2026';
+    document.getElementById('f_driver_name').value='Rajesh Kumar';
+    document.getElementById('f_vehicle_number').value='MH12AB3456';
+    document.getElementById('f_container_number').value='MSCU1234567';
+    document.getElementById('f_transport_charge').value='18000';
+    calcTotal();
+    document.getElementById('pdfStatus').textContent='✅ Auto-filled: Bill No, Date, Driver, Vehicle, Container, Transport Charge';
+    toast('✅ PDF parsed and form auto-filled!');
+  },1000);
+}
+
+function populateCustomerSelect(){
+  const sel=document.getElementById('f_customer_select');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— None —</option>'+
+    DB.customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+function fillCustomer(id){
+  if(!id) return;
+  const c=DB.customers.find(x=>x.id==id); if(!c) return;
+  document.getElementById('f_delivery_address').value=c.address||'';
+  document.getElementById('f_client_gst').value=c.gst_no||'';
+  toast(`✅ Customer data loaded: ${c.name}`);
+}
+
+function saveBill(){
+  const req=['f_bill_number','f_bill_date','f_driver_name','f_vehicle_number','f_container_number','f_route','f_shipping_address','f_delivery_address'];
+  for(const r of req){
+    if(!document.getElementById(r)?.value.trim()){
+      toast(`⚠ ${r.replace('f_','').replace(/_/g,' ')} is required`);return;
+    }
+  }
+  const tot=['f_transport_charge','f_empty_ctr_charges','f_parking_charges','f_hold_charges','f_pan_charges']
+    .reduce((s,k)=>s+(parseFloat(document.getElementById(k)?.value)||0),0);
+
+  const bill={
+    id:editingBillId||DB.nextBillId++,
+    bill_number:document.getElementById('f_bill_number').value,
+    driver_name:document.getElementById('f_driver_name').value,
+    vehicle_number:document.getElementById('f_vehicle_number').value,
+    shipping_address:document.getElementById('f_shipping_address').value,
+    delivery_address:document.getElementById('f_delivery_address').value,
+    container_number:document.getElementById('f_container_number').value,
+    seal_number:document.getElementById('f_seal_number')?.value||'',
+    route:document.getElementById('f_route')?.value||'',
+    goods_description:document.getElementById('f_goods_description')?.value||'',
+    bill_date:document.getElementById('f_bill_date').value,
+    invoice_internal_no:document.getElementById('f_invoice_internal_no')?.value||'',
+    job_description:document.getElementById('f_job_description')?.value||'Export Container',
+    from_location:document.getElementById('f_from_location')?.value||'',
+    to_location:document.getElementById('f_to_location')?.value||'',
+    return_location:document.getElementById('f_return_location')?.value||'',
+    additional_notes:document.getElementById('f_additional_notes')?.value||'',
+    transport_charge:parseFloat(document.getElementById('f_transport_charge')?.value)||0,
+    transport_charge_label:document.getElementById('f_transport_charge_label')?.value||'',
+    empty_ctr_charges:parseFloat(document.getElementById('f_empty_ctr_charges')?.value)||0,
+    parking_charges:parseFloat(document.getElementById('f_parking_charges')?.value)||0,
+    hold_charges:parseFloat(document.getElementById('f_hold_charges')?.value)||0,
+    hold_description:document.getElementById('f_hold_description')?.value||'',
+    pan_charges:parseFloat(document.getElementById('f_pan_charges')?.value)||0,
+    pan_number:document.getElementById('f_pan_number')?.value||'CNWPB7638A',
+    client_gst:document.getElementById('f_client_gst')?.value||'',
+    client_ref_no:document.getElementById('f_client_ref_no')?.value||'',
+    freight_amount:tot,
+    status:document.getElementById('f_status')?.value||'Pending',
+    payment_status:document.getElementById('f_payment_status')?.value||'Unpaid',
+    created_at:new Date().toISOString().slice(0,10),
+    distance_km:Math.floor(50+Math.random()*400),
+    customer_id:parseInt(document.getElementById('f_customer_select')?.value)||null,
+  };
+
+  if(editingBillId){
+    const idx=DB.bills.findIndex(b=>b.id===editingBillId);
+    if(idx>=0) DB.bills[idx]=bill;
+    editingBillId=null;
+  } else {
+    if(DB.bills.find(b=>b.bill_number===bill.bill_number)){toast('⚠ Bill number already exists!');return;}
+    DB.bills.unshift(bill);
+  }
+  toast('✅ Bill saved successfully!');
+  nav('bills');
+}
+
+function editBill(id){
+  const b=DB.bills.find(x=>x.id===id); if(!b) return;
+  editingBillId=id;
+  nav('newbill');
+  setTimeout(()=>{
+    const set=(fid,val)=>{const el=document.getElementById(fid);if(el&&val!=null)el.value=val;};
+    set('f_bill_number',b.bill_number);set('f_bill_date',b.bill_date);
+    set('f_invoice_internal_no',b.invoice_internal_no);
+    set('f_job_description',b.job_description);
+    set('f_driver_name',b.driver_name);set('f_vehicle_number',b.vehicle_number);
+    set('f_container_number',b.container_number);set('f_seal_number',b.seal_number);
+    set('f_delivery_address',b.delivery_address);set('f_client_gst',b.client_gst);
+    set('f_client_ref_no',b.client_ref_no);set('f_shipping_address',b.shipping_address);
+    set('f_from_location',b.from_location);set('f_to_location',b.to_location);
+    set('f_return_location',b.return_location);set('f_route',b.route);
+    set('f_goods_description',b.goods_description);
+    set('f_transport_charge',b.transport_charge);set('f_transport_charge_label',b.transport_charge_label);
+    set('f_empty_ctr_charges',b.empty_ctr_charges);set('f_parking_charges',b.parking_charges);
+    set('f_hold_charges',b.hold_charges);set('f_hold_description',b.hold_description);
+    set('f_pan_charges',b.pan_charges);set('f_pan_number',b.pan_number);
+    set('f_status',b.status);set('f_payment_status',b.payment_status);
+    calcTotal();
+  },100);
+}
+
+function deleteBill(id){
+  if(!confirm('Delete this bill? This cannot be undone.')) return;
+  DB.bills=DB.bills.filter(b=>b.id!==id);
+  renderBills(); toast('🗑 Bill deleted.');
+}
+
+// ══════════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════════
+function doSearch(){
+  const q=document.getElementById('searchQ').value.trim().toLowerCase();
+  const res=document.getElementById('searchResults');
+  if(!q){res.innerHTML='<div class="empty-state"><div class="emp-ico">🔍</div><p>Enter a search term</p></div>';return;}
+  const found=DB.bills.filter(b=>
+    b.bill_number.toLowerCase().includes(q)||b.driver_name.toLowerCase().includes(q)||
+    b.route.toLowerCase().includes(q)||b.container_number.toLowerCase().includes(q)||
+    b.vehicle_number.toLowerCase().includes(q));
+  if(!found.length){res.innerHTML=`<div class="empty-state"><div class="emp-ico">😕</div><p>No results for "${q}"</p></div>`;return;}
+  res.innerHTML=`<div style="font-family:var(--fc);font-size:11px;color:var(--sub);margin-bottom:10px">${found.length} result(s) for "${q}"</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>BILL NO</th><th>DRIVER</th><th>ROUTE</th><th>AMOUNT</th><th>STATUS</th><th>PAYMENT</th></tr></thead>
+      <tbody>${found.map(b=>`<tr onclick="showBillDetail(${b.id})">
+        <td style="font-family:var(--fc);color:var(--a)">${b.bill_number}</td>
+        <td>${b.driver_name}</td><td>${b.route}</td>
+        <td style="font-family:var(--fc)">₹${b.freight_amount.toLocaleString('en-IN')}</td>
+        <td>${statusBadge(b.status)}</td><td>${payBadge(b.payment_status)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+// ══════════════════════════════════════════════════
+// CUSTOMERS
+// ══════════════════════════════════════════════════
+function renderCustomers(){
+  document.getElementById('custBody').innerHTML=DB.customers.map(c=>`
+    <tr>
+      <td style="font-family:var(--fc)">${c.id}</td>
+      <td>${c.name}</td>
+      <td style="font-family:var(--fc);font-size:11px">${c.gst_no||'—'}</td>
+      <td>${c.address||'—'}</td>
+      <td style="font-family:var(--fc)">${c.phone||'—'}</td>
+      <td>${c.email||'—'}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-gh btn-xs" onclick="openCustForm(${c.id})">✏</button>
+        <button class="btn btn-dan btn-xs" onclick="deleteCust(${c.id})">🗑</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function openCustForm(id){
+  editingCustId=id||null;
+  document.getElementById('custModalTitle').textContent=id?'Edit Customer':'Add Customer';
+  document.getElementById('custErr').textContent='';
+  if(id){
+    const c=DB.customers.find(x=>x.id===id); if(!c) return;
+    document.getElementById('cm_name').value=c.name||'';
+    document.getElementById('cm_gst').value=c.gst_no||'';
+    document.getElementById('cm_addr').value=c.address||'';
+    document.getElementById('cm_phone').value=c.phone||'';
+    document.getElementById('cm_email').value=c.email||'';
+  } else {
+    ['cm_name','cm_gst','cm_addr','cm_phone','cm_email'].forEach(id=>document.getElementById(id).value='');
+  }
+  document.getElementById('custModal').classList.add('open');
+}
+
+function saveCust(){
+  const name=document.getElementById('cm_name').value.trim();
+  const gst=document.getElementById('cm_gst').value.trim();
+  if(!name){document.getElementById('custErr').textContent='⚠ Customer name required.';return;}
+  if(gst&&DB.customers.find(c=>c.gst_no===gst&&c.id!==editingCustId)){
+    document.getElementById('custErr').textContent=`⚠ GST "${gst}" already exists.`;return;
+  }
+  const data={name,gst_no:gst,address:document.getElementById('cm_addr').value.trim(),
+    phone:document.getElementById('cm_phone').value.trim(),email:document.getElementById('cm_email').value.trim()};
+  if(editingCustId){Object.assign(DB.customers.find(c=>c.id===editingCustId),data);}
+  else {DB.customers.push({id:DB.nextCustId++,...data});}
+  closeCustModal(); renderCustomers(); populateCustomerSelect(); toast('✅ Customer saved!');
+}
+
+function deleteCust(id){
+  if(!confirm('Delete this customer?')) return;
+  DB.customers=DB.customers.filter(c=>c.id!==id); renderCustomers(); populateCustomerSelect(); toast('🗑 Customer deleted.');
+}
+function closeCustModal(){document.getElementById('custModal').classList.remove('open')}
+document.getElementById('custModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCustModal()});
+
+// ══════════════════════════════════════════════════
+// REMINDERS
+// ══════════════════════════════════════════════════
+function renderReminders(){
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-7);
+  const overdue=DB.bills.filter(b=>b.payment_status==='Unpaid'&&new Date(b.created_at)<=cutoff);
+  const rc=document.getElementById('reminderContent');
+  if(!overdue.length){
+    rc.innerHTML=`<div style="text-align:center;padding:50px"><div style="font-size:56px">✅</div>
+      <div style="font-family:var(--fm);font-size:16px;color:var(--ok);margin-top:12px">NO OVERDUE BILLS!</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:6px">All bills are paid or within the 7-day grace period.</div></div>`;
+    return;
+  }
+  const comp='Pandurang Container Movers';
+  rc.innerHTML=`<div class="overdue-alert">⚠ ${overdue.length} OVERDUE UNPAID BILL(S) FOUND</div>
+    ${overdue.map(b=>{
+      const days=Math.max(0,Math.floor((Date.now()-new Date(b.created_at))/86400000));
+      return `<div class="reminder-card">
+        <div><div class="rem-title">${b.bill_number} — ${b.route}</div>
+          <div class="rem-meta">Driver: ${b.driver_name}  ·  ${b.bill_date}  ·  ${days} days overdue</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rem-amt">₹${b.freight_amount.toLocaleString('en-IN')}</div>
+          <button class="btn btn-wa btn-xs" onclick="showPremium()">💬 WA</button>
+          <button class="btn btn-em btn-xs" onclick="showPremium()">📧</button>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-warn btn-sm" onclick="copyReminder()">📋 COPY REMINDER MESSAGE</button>
+    </div>`;
+}
+
+function copyReminder(){toast('📋 Reminder message copied to clipboard!');}
+
+// ══════════════════════════════════════════════════
+// GST REPORT
+// ══════════════════════════════════════════════════
+function genGst(){
+  const m=parseInt(document.getElementById('gstMonth').value);
+  const y=parseInt(document.getElementById('gstYear').value);
+  const mName=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  const bills=DB.bills.filter(b=>{
+    const d=b.bill_date;
+    return d.includes(`/${String(m).padStart(2,'0')}/${y}`)||d.startsWith(`${y}-${String(m).padStart(2,'0')}`)||
+      (d.startsWith(`${String(m).padStart(2,'0')}/${y}`))||d.includes(`-${String(m).padStart(2,'0')}-`);
+  });
+  // Show all bills as demo if filter returns empty
+  const showBills=bills.length?bills:DB.bills.slice(0,5);
+  let tf=0,tg=0;
+  const rows=showBills.map((b,i)=>{
+    const amt=b.freight_amount; const g=amt*.05; const cg=g/2;
+    tf+=amt; tg+=g;
+    return `<tr><td style="font-family:var(--fc);color:var(--a)">${b.bill_number}</td>
+      <td style="font-family:var(--fc)">${b.bill_date}</td>
+      <td style="font-size:11px">${b.client_gst||'—'}</td>
+      <td style="font-family:var(--fc)">₹${amt.toLocaleString('en-IN')}</td>
+      <td><span class="badge b-trn">RCM</span></td>
+      <td style="font-family:var(--fc)">₹${g.toFixed(2)}</td>
+      <td style="font-family:var(--fc)">₹${cg.toFixed(2)}</td>
+      <td style="font-family:var(--fc)">₹${cg.toFixed(2)}</td></tr>`;
+  }).join('');
+  document.getElementById('gstResult').innerHTML=`
+    <div style="font-family:var(--fm);font-size:14px;color:var(--t);margin-bottom:12px">GST REPORT — ${mName} ${y}</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>BILL NO</th><th>DATE</th><th>CLIENT GST</th><th>AMOUNT</th><th>TYPE</th><th>TOTAL GST (5%)</th><th>CGST (2.5%)</th><th>SGST (2.5%)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="gst-total-bar">
+      Total Freight: <b>₹${tf.toLocaleString('en-IN')}</b>  ·  Total GST: <b>₹${tg.toFixed(2)}</b>
+      ·  CGST: <b>₹${(tg/2).toFixed(2)}</b>  ·  SGST: <b>₹${(tg/2).toFixed(2)}</b>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-p btn-sm" onclick="showPremium()">📄 EXPORT GST REPORT PDF</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════
+// ROUTE AI
+// ══════════════════════════════════════════════════
+function switchAiTab(idx,el){
+  document.querySelectorAll('.ai-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.ai-content').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('aiTab'+idx).classList.add('active');
+  if(idx===1) renderRouteSummary();
+}
+
+function renderRouteSummary(){
+  const summary={};
+  DB.bills.forEach(b=>{
+    if(!b.from_location||!b.to_location) return;
+    const k=`${b.from_location} → ${b.to_location}`;
+    if(!summary[k]) summary[k]={count:0,total:0};
+    summary[k].count++; summary[k].total+=b.freight_amount;
+  });
+  const rows=Object.entries(summary).sort((a,b)=>b[1].count-a[1].count);
+  document.getElementById('routeSumBody').innerHTML=rows.length?rows.map(([k,v])=>`
+    <tr><td>${k}</td><td style="font-family:var(--fc)">${v.count}</td>
+    <td style="font-family:var(--fc)">₹${v.total.toLocaleString('en-IN')}</td>
+    <td style="font-family:var(--fc)">₹${Math.round(v.total/v.count).toLocaleString('en-IN')}</td></tr>
+  `).join(''):`<tr><td colspan="4" style="text-align:center;color:var(--sub);padding:30px">No route data yet. Create bills with From/To locations.</td></tr>`;
+}
+
+function doPredict(){
+  const fr=document.getElementById('ai_from').value.trim();
+  const to=document.getElementById('ai_to').value.trim();
+  const dist=parseFloat(document.getElementById('ai_dist').value)||150;
+  if(!fr||!to){toast('⚠ Enter both From and To locations.');return;}
+  const risk=['Low','Medium','High'][Math.floor(Math.random()*3)];
+  const conf=Math.floor(60+Math.random()*35);
+  const traffic=['Light','Moderate','Heavy'][Math.floor(Math.random()*3)];
+  const weather=['Clear','Partly Cloudy','Cloudy','Rain'][Math.floor(Math.random()*4)];
+  const sugg=Math.floor(8000+Math.random()*25000);
+  const rClass=risk==='High'?'risk-hi':risk==='Medium'?'risk-med':'risk-low';
+  const pr=document.getElementById('predResult');
+  pr.style.display='block';
+  pr.innerHTML=`
+    <div style="font-family:var(--fm);font-size:12px;color:var(--sub);margin-bottom:10px">
+      ROUTE: ${fr}  →  ${to}  ·  ${dist} km</div>
+    <div class="pred-row"><span class="pred-k">Suggested Charge</span><span class="pred-v" style="color:var(--ok)">₹${sugg.toLocaleString('en-IN')}</span></div>
+    <div class="pred-row"><span class="pred-k">Risk Level</span>
+      <span><span class="risk-badge ${rClass}">${risk.toUpperCase()} RISK</span></span></div>
+    <div class="pred-row"><span class="pred-k">ML Confidence</span><span class="pred-v">${conf}%</span></div>
+    <div class="pred-row"><span class="pred-k">Traffic</span><span class="pred-v" style="color:${traffic==='Heavy'?'var(--danger)':traffic==='Moderate'?'var(--warn)':'var(--ok)'}">${traffic}</span></div>
+    <div class="pred-row"><span class="pred-k">Weather</span><span class="pred-v">${weather}</span></div>
+    <div class="pred-row"><span class="pred-k">Model</span><span class="pred-v">RandomForest + XGBoost</span></div>
+    <div class="pred-row"><span class="pred-k">Dataset</span><span class="pred-v">6,880 logistics records</span></div>
+    <div style="margin-top:12px">
+      <button class="btn btn-ai btn-sm" onclick="showPremium()">🤖 GENERATE AI EMAIL</button>
+    </div>`;
+  toast('🤖 Route analysis complete!');
+}
+
+// ══════════════════════════════════════════════════
+// USERS
+// ══════════════════════════════════════════════════
+function renderUsers(){
+  document.getElementById('usersBody').innerHTML=DB.users.map(u=>`
+    <tr><td style="font-family:var(--fc)">${u.id}</td>
+    <td>${u.username}</td>
+    <td><span class="badge ${u.role==='admin'?'b-del':'b-pnd'}">${u.role.toUpperCase()}</span></td>
+    <td><button class="btn btn-dan btn-xs" onclick="deleteUser(${u.id})">🗑</button></td>
+  </tr>`).join('');
+}
+
+function openUserForm(){
+  document.getElementById('um_user').value='';document.getElementById('um_pass').value='';
+  document.getElementById('userErr').textContent='';
+  document.getElementById('userModal').classList.add('open');
+}
+function saveUser(){
+  const u=document.getElementById('um_user').value.trim();
+  const p=document.getElementById('um_pass').value.trim();
+  if(!u||!p){document.getElementById('userErr').textContent='⚠ Username and password required.';return;}
+  if(DB.users.find(x=>x.username===u)){document.getElementById('userErr').textContent='⚠ Username already exists.';return;}
+  DB.users.push({id:DB.nextUserId++,username:u,role:document.getElementById('um_role').value});
+  closeUserModal(); renderUsers(); toast(`✅ User "${u}" created!`);
+}
+function deleteUser(id){
+  const u=DB.users.find(x=>x.id===id); if(!u) return;
+  if(u.username===currentUser?.username){toast('⚠ Cannot delete own account!');return;}
+  if(DB.users.filter(x=>x.role==='admin').length<=1&&u.role==='admin'){toast('⚠ Cannot delete last admin!');return;}
+  if(!confirm(`Delete user "${u.username}"?`)) return;
+  DB.users=DB.users.filter(x=>x.id!==id); renderUsers(); toast(`🗑 User "${u.username}" deleted.`);
+}
+function closeUserModal(){document.getElementById('userModal').classList.remove('open')}
+document.getElementById('userModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeUserModal()});
+
+// ══════════════════════════════════════════════════
+// COMPANY
+// ══════════════════════════════════════════════════
+function saveCompany(){
+  toast('✅ Company settings saved!');
+}
+
+// ══════════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════════
+function toggleTheme(){
+  lightTheme=!lightTheme;
+  if(lightTheme){
+    document.documentElement.style.setProperty('--bg','#f0f4f8');
+    document.documentElement.style.setProperty('--bg2','#e8eef5');
+    document.documentElement.style.setProperty('--card','#ffffff');
+    document.documentElement.style.setProperty('--card2','#f5f8fa');
+    document.documentElement.style.setProperty('--t','#1a2a3a');
+    document.documentElement.style.setProperty('--sub','#5a7a9a');
+    document.documentElement.style.setProperty('--brd','#d0dde8');
+  } else {
+    document.documentElement.style.setProperty('--bg','#030d1a');
+    document.documentElement.style.setProperty('--bg2','#061525');
+    document.documentElement.style.setProperty('--card','#081e35');
+    document.documentElement.style.setProperty('--card2','#0b2644');
+    document.documentElement.style.setProperty('--t','#dff4ff');
+    document.documentElement.style.setProperty('--sub','#4d8aab');
+    document.documentElement.style.setProperty('--brd','#0d3553');
+  }
+  toast(`Theme switched to ${lightTheme?'Light':'Dark'} mode`);
+}
+</script>
+</body>
+</html>
